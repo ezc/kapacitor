@@ -3,9 +3,14 @@ package stateful
 import (
 	"fmt"
 	"strings"
+
+	"github.com/influxdata/kapacitor/tick/ast"
 )
 
-type DynamicMethod func(self interface{}, args ...interface{}) (interface{}, error)
+type DynamicMethod struct {
+	F         func(self interface{}, args ...interface{}) (interface{}, error)
+	Signature map[Domain]ast.ValueType
+}
 
 // Special marker that a value is empty
 var empty = new(interface{})
@@ -14,14 +19,14 @@ var empty = new(interface{})
 type Scope struct {
 	variables map[string]interface{}
 
-	dynamicMethods map[string]DynamicMethod
+	dynamicMethods map[string]*DynamicMethod
 }
 
 //Initialize a new Scope object.
 func NewScope() *Scope {
 	return &Scope{
 		variables:      make(map[string]interface{}),
-		dynamicMethods: make(map[string]DynamicMethod),
+		dynamicMethods: make(map[string]*DynamicMethod),
 	}
 }
 
@@ -56,10 +61,10 @@ func (s *Scope) Reset() {
 	}
 }
 
-func (s *Scope) SetDynamicMethod(name string, m DynamicMethod) {
+func (s *Scope) SetDynamicMethod(name string, m *DynamicMethod) {
 	s.dynamicMethods[name] = m
 }
 
-func (s *Scope) DynamicMethod(name string) DynamicMethod {
+func (s *Scope) DynamicMethod(name string) *DynamicMethod {
 	return s.dynamicMethods[name]
 }

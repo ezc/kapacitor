@@ -58,6 +58,8 @@ kapacitor define-handler system aggregate_by_1m.yaml
     See the updated API docs.
 - [#1286](https://github.com/influxdata/kapacitor/issues/1286): Default HipChat URL should be blank
 - [#507](https://github.com/influxdata/kapacitor/issues/507): Add API endpoint for performing Kapacitor database backups.
+- [#1284](https://github.com/influxdata/kapacitor/pull/1284): Add type signatures to Kapacitor functions.
+- [#1203](https://github.com/influxdata/kapacitor/issues/1203): Add `isPresent` operator for verifying whether a value is present (part of [#1284](https://github.com/influxdata/kapacitor/pull/1284)).
 
 ### Bugfixes
 

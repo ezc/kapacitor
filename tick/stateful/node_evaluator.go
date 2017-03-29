@@ -22,6 +22,7 @@ func (e ErrTypeGuardFailed) Error() string {
 
 type ReadOnlyScope interface {
 	Get(name string) (interface{}, error)
+	DynamicMethod(name string) *DynamicMethod
 }
 
 // NodeEvaluator provides a generic way for trying to fetch
@@ -34,6 +35,7 @@ type NodeEvaluator interface {
 	EvalRegex(scope *Scope, executionState ExecutionState) (*regexp.Regexp, error)
 	EvalTime(scope *Scope, executionState ExecutionState) (time.Time, error)
 	EvalDuration(scope *Scope, executionState ExecutionState) (time.Duration, error)
+	EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error)
 
 	// TODO: Remove executionState from Type functions type signature
 	// Type returns the type of ast.ValueType

@@ -78,8 +78,11 @@ func (se *expression) EvalDuration(scope *Scope) (time.Duration, error) {
 	return se.nodeEvaluator.EvalDuration(scope, se.executionState)
 }
 
+func (se *expression) EvalMissing(scope *Scope) (*ast.Missing, error) {
+	return se.nodeEvaluator.EvalMissing(scope, se.executionState)
+}
+
 func (se *expression) Eval(scope *Scope) (interface{}, error) {
-	// TODO: Remove CreateExecutionState eventually
 	typ, err := se.nodeEvaluator.Type(scope, CreateExecutionState())
 	if err != nil {
 		return nil, err
@@ -112,6 +115,12 @@ func (se *expression) Eval(scope *Scope) (interface{}, error) {
 		return result, err
 	case ast.TDuration:
 		result, err := se.EvalDuration(scope)
+		if err != nil {
+			return nil, err
+		}
+		return result, err
+	case ast.TMissing:
+		result, err := se.EvalMissing(scope)
 		if err != nil {
 			return nil, err
 		}

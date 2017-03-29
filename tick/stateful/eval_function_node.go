@@ -3,6 +3,7 @@ package stateful
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/influxdata/kapacitor/tick/ast"
@@ -34,7 +35,11 @@ func NewEvalFunctionNode(funcNode *ast.FunctionNode) (*EvalFunctionNode, error) 
 func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
 	f := executionState.Funcs[n.funcName]
 	if f == nil {
-		return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
+		dm := scope.DynamicMethod(n.funcName)
+		if dm == nil {
+			return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
+		}
+		f = dynamicMethodFunc{dm}
 	}
 	signature := f.Signature()
 
@@ -52,7 +57,7 @@ func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionSta
 
 	retType, ok := signature[domain]
 	if !ok {
-		// TODO: Cleanup error returned here
+		// TODO: Better return error?
 		return ast.InvalidType, fmt.Errorf("Wrong function signature")
 	}
 
@@ -187,6 +192,18 @@ func (n *EvalFunctionNode) EvalBool(scope *Scope, executionState ExecutionState)
 	return false, ErrTypeGuardFailed{RequestedType: ast.TBool, ActualType: ast.TypeOf(refValue)}
 }
 
+func (n *EvalFunctionNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	refValue, err := n.callFunction(scope, executionState)
+	if err != nil {
+		return nil, err
+	}
+
+	if missingValue, isMissing := refValue.(*ast.Missing); isMissing {
+		return missingValue, nil
+	}
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: ast.TypeOf(refValue)}
+}
+
 // eval - generic evaluation until we have reflection/introspection capabillities so we can know the type of args
 // and return type, we can remove this entirely
 func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interface{}, error) {
@@ -210,6 +227,12 @@ func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interfa
 		return n.EvalTime(scope, executionState)
 	case ast.TDuration:
 		return n.EvalDuration(scope, executionState)
+	case ast.TMissing:
+		v, err := n.EvalMissing(scope, executionState)
+		if err != nil && !strings.Contains(err.Error(), "missing value") {
+			return v, err
+		}
+		return v, nil
 	default:
 		return nil, fmt.Errorf("function arg expression returned unexpected type %s", retType)
 	}
@@ -217,11 +240,15 @@ func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interfa
 }
 
 type dynamicMethodFunc struct {
-	dm DynamicMethod
+	dm *DynamicMethod
 }
 
 func (dmf dynamicMethodFunc) Call(args ...interface{}) (interface{}, error) {
-	return dmf.dm(nil, args...)
+	return dmf.dm.F(nil, args...)
 }
 func (dmf dynamicMethodFunc) Reset() {
+}
+
+func (dmf dynamicMethodFunc) Signature() map[Domain]ast.ValueType {
+	return dmf.dm.Signature
 }

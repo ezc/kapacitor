@@ -28,6 +28,7 @@ import (
 	"github.com/influxdata/kapacitor/services/telegram"
 	"github.com/influxdata/kapacitor/services/victorops"
 	"github.com/influxdata/kapacitor/tick"
+	"github.com/influxdata/kapacitor/tick/ast"
 	"github.com/influxdata/kapacitor/tick/stateful"
 	"github.com/influxdata/kapacitor/timer"
 	"github.com/influxdata/kapacitor/udf"
@@ -374,20 +375,24 @@ func (tm *TaskMaster) CreateTICKScope() *stateful.Scope {
 			info, _ := tm.UDFService.Info(f)
 			scope.SetDynamicMethod(
 				f,
-				stateful.DynamicMethod(func(self interface{}, args ...interface{}) (interface{}, error) {
-					parent, ok := self.(pipeline.Node)
-					if !ok {
-						return nil, fmt.Errorf("cannot call %s on %T", f, self)
-					}
-					udf := pipeline.NewUDF(
-						parent,
-						f,
-						info.Wants,
-						info.Provides,
-						info.Options,
-					)
-					return udf, nil
-				}),
+				&stateful.DynamicMethod{
+					F: func(self interface{}, args ...interface{}) (interface{}, error) {
+						parent, ok := self.(pipeline.Node)
+						if !ok {
+							return nil, fmt.Errorf("cannot call %s on %T", f, self)
+						}
+						udf := pipeline.NewUDF(
+							parent,
+							f,
+							info.Wants,
+							info.Provides,
+							info.Options,
+						)
+						return udf, nil
+					},
+					// TODO: What to do for signature here?
+					Signature: map[stateful.Domain]ast.ValueType{},
+				},
 			)
 		}
 	}

@@ -128,3 +128,17 @@ func (n *EvalReferenceNode) EvalBool(scope *Scope, executionState ExecutionState
 
 	return false, ErrTypeGuardFailed{RequestedType: ast.TBool, ActualType: ast.TypeOf(refValue)}
 }
+
+func (n *EvalReferenceNode) EvalMissing(scope *Scope, executionState ExecutionState) (*ast.Missing, error) {
+	refValue, err := n.getReferenceValue(scope, executionState)
+	if err != nil {
+		return nil, err
+	}
+
+	if missingVal, isMissing := refValue.(*ast.Missing); isMissing {
+		//  This error gets checked in the eval method of a function node
+		return missingVal, fmt.Errorf("missing value: \"%v\"", n.Node.Reference)
+	}
+
+	return nil, ErrTypeGuardFailed{RequestedType: ast.TMissing, ActualType: ast.TypeOf(refValue)}
+}

@@ -555,7 +555,7 @@ func evalFunc(f *ast.FunctionNode, scope *stateful.Scope, stck *stack, args []in
 		case ast.DynamicFunc:
 			// Check for dynamic method.
 			if dm := scope.DynamicMethod(name); dm != nil {
-				ret, err := dm(obj, args...)
+				ret, err := dm.F(obj, args...)
 				if err != nil {
 					return nil, err
 				}
