@@ -506,19 +506,19 @@ func (h *matchHandler) Handle(event alert.Event) {
 	}
 }
 
-var changedMethodSignature = map[stateful.Domain]ast.ValueType{}
-var levelMethodSignature = map[stateful.Domain]ast.ValueType{}
-var nameMethodSignature = map[stateful.Domain]ast.ValueType{}
-var taskNameMethodSignature = map[stateful.Domain]ast.ValueType{}
-var durationMethodSignature = map[stateful.Domain]ast.ValueType{}
+var changedFuncSignature = map[stateful.Domain]ast.ValueType{}
+var levelFuncSignature = map[stateful.Domain]ast.ValueType{}
+var nameFuncSignature = map[stateful.Domain]ast.ValueType{}
+var taskNameFuncSignature = map[stateful.Domain]ast.ValueType{}
+var durationFuncSignature = map[stateful.Domain]ast.ValueType{}
 
 func init() {
 	d := stateful.Domain{}
-	changedMethodSignature[d] = ast.TBool
-	levelMethodSignature[d] = ast.TInt
-	nameMethodSignature[d] = ast.TString
-	taskNameMethodSignature[d] = ast.TString
-	durationMethodSignature[d] = ast.TDuration
+	changedFuncSignature[d] = ast.TBool
+	levelFuncSignature[d] = ast.TInt
+	nameFuncSignature[d] = ast.TString
+	taskNameFuncSignature[d] = ast.TString
+	durationFuncSignature[d] = ast.TDuration
 }
 
 func (h *matchHandler) match(event alert.Event) (bool, error) {
@@ -528,62 +528,62 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 	h.logger.Printf("D! match %+v", h)
 
 	if h.usesChanged {
-		h.scope.SetDynamicMethod(changedFunc, &stateful.DynamicMethod{
+		h.scope.SetDynamicFunc(changedFunc, &stateful.DynamicFunc{
 			F: func(self interface{}, args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", changedFunc)
 				}
 				return event.State.Level != event.PreviousState().Level, nil
 			},
-			Signature: changedMethodSignature,
+			Sig: changedFuncSignature,
 		})
 	}
 
 	if h.usesLevel {
-		h.scope.SetDynamicMethod(levelFunc, &stateful.DynamicMethod{
+		h.scope.SetDynamicFunc(levelFunc, &stateful.DynamicFunc{
 			F: func(self interface{}, args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", levelFunc)
 				}
 				return int64(event.State.Level), nil
 			},
-			Signature: levelMethodSignature,
+			Sig: levelFuncSignature,
 		})
 	}
 
 	if h.usesName {
-		h.scope.SetDynamicMethod(nameFunc, &stateful.DynamicMethod{
+		h.scope.SetDynamicFunc(nameFunc, &stateful.DynamicFunc{
 			F: func(self interface{}, args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", nameFunc)
 				}
 				return event.Data.Name, nil
 			},
-			Signature: nameMethodSignature,
+			Sig: nameFuncSignature,
 		})
 	}
 
 	if h.usesTaskName {
-		h.scope.SetDynamicMethod(taskNameFunc, &stateful.DynamicMethod{
+		h.scope.SetDynamicFunc(taskNameFunc, &stateful.DynamicFunc{
 			F: func(self interface{}, args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", taskNameFunc)
 				}
 				return event.Data.TaskName, nil
 			},
-			Signature: taskNameMethodSignature,
+			Sig: taskNameFuncSignature,
 		})
 	}
 
 	if h.usesDuration {
-		h.scope.SetDynamicMethod(durationFunc, &stateful.DynamicMethod{
+		h.scope.SetDynamicFunc(durationFunc, &stateful.DynamicFunc{
 			F: func(self interface{}, args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", durationFunc)
 				}
 				return event.State.Duration, nil
 			},
-			Signature: durationMethodSignature,
+			Sig: durationFuncSignature,
 		})
 	}
 

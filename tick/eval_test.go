@@ -142,20 +142,17 @@ func TestEvaluate_DynamicMethod(t *testing.T) {
 	a := &structA{}
 	scope.Set("a", a)
 
-	dm := &stateful.DynamicMethod{
-		F: func(self interface{}, args ...interface{}) (interface{}, error) {
-			a, ok := self.(*structA)
-			if !ok {
-				return nil, fmt.Errorf("cannot call dynamicMethod on %T", self)
-			}
-			o := &orphan{
-				parent: a,
-				Sad:    true,
-				args:   args,
-			}
-			return o, nil
-		},
-		Signature: map[stateful.Domain]ast.ValueType{},
+	dm := func(self interface{}, args ...interface{}) (interface{}, error) {
+		a, ok := self.(*structA)
+		if !ok {
+			return nil, fmt.Errorf("cannot call dynamicMethod on %T", self)
+		}
+		o := &orphan{
+			parent: a,
+			Sad:    true,
+			args:   args,
+		}
+		return o, nil
 	}
 	scope.SetDynamicMethod("dynamicMethod", dm)
 

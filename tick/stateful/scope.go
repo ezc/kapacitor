@@ -7,9 +7,21 @@ import (
 	"github.com/influxdata/kapacitor/tick/ast"
 )
 
-type DynamicMethod struct {
-	F         func(self interface{}, args ...interface{}) (interface{}, error)
-	Signature map[Domain]ast.ValueType
+type DynamicMethod func(self interface{}, args ...interface{}) (interface{}, error)
+
+type DynamicFunc struct {
+	F   func(self interface{}, args ...interface{}) (interface{}, error)
+	Sig map[Domain]ast.ValueType
+}
+
+func (df DynamicFunc) Call(args ...interface{}) (interface{}, error) {
+	return df.F(nil, args...)
+}
+func (df DynamicFunc) Reset() {
+}
+
+func (df DynamicFunc) Signature() map[Domain]ast.ValueType {
+	return df.Sig
 }
 
 // Special marker that a value is empty
@@ -19,14 +31,16 @@ var empty = new(interface{})
 type Scope struct {
 	variables map[string]interface{}
 
-	dynamicMethods map[string]*DynamicMethod
+	dynamicMethods map[string]DynamicMethod
+	dynamicFuncs   map[string]*DynamicFunc
 }
 
 //Initialize a new Scope object.
 func NewScope() *Scope {
 	return &Scope{
 		variables:      make(map[string]interface{}),
-		dynamicMethods: make(map[string]*DynamicMethod),
+		dynamicMethods: make(map[string]DynamicMethod),
+		dynamicFuncs:   make(map[string]*DynamicFunc),
 	}
 }
 
@@ -61,10 +75,18 @@ func (s *Scope) Reset() {
 	}
 }
 
-func (s *Scope) SetDynamicMethod(name string, m *DynamicMethod) {
+func (s *Scope) SetDynamicMethod(name string, m DynamicMethod) {
 	s.dynamicMethods[name] = m
 }
 
-func (s *Scope) DynamicMethod(name string) *DynamicMethod {
+func (s *Scope) DynamicMethod(name string) DynamicMethod {
 	return s.dynamicMethods[name]
+}
+
+func (s *Scope) SetDynamicFunc(name string, f *DynamicFunc) {
+	s.dynamicFuncs[name] = f
+}
+
+func (s *Scope) DynamicFunc(name string) *DynamicFunc {
+	return s.dynamicFuncs[name]
 }

@@ -35,11 +35,11 @@ func NewEvalFunctionNode(funcNode *ast.FunctionNode) (*EvalFunctionNode, error) 
 func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
 	f := executionState.Funcs[n.funcName]
 	if f == nil {
-		dm := scope.DynamicMethod(n.funcName)
-		if dm == nil {
+		df := scope.DynamicFunc(n.funcName)
+		if df == nil {
 			return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
 		}
-		f = dynamicMethodFunc{dm}
+		f = df
 	}
 	signature := f.Signature()
 
@@ -84,8 +84,8 @@ func (n *EvalFunctionNode) callFunction(scope *Scope, executionState ExecutionSt
 
 	// Look for function on scope
 	if f == nil {
-		if dm := scope.DynamicMethod(n.funcName); dm != nil {
-			f = dynamicMethodFunc{dm: dm}
+		if df := scope.DynamicFunc(n.funcName); df != nil {
+			f = df
 		}
 	}
 
@@ -237,18 +237,4 @@ func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interfa
 		return nil, fmt.Errorf("function arg expression returned unexpected type %s", retType)
 	}
 
-}
-
-type dynamicMethodFunc struct {
-	dm *DynamicMethod
-}
-
-func (dmf dynamicMethodFunc) Call(args ...interface{}) (interface{}, error) {
-	return dmf.dm.F(nil, args...)
-}
-func (dmf dynamicMethodFunc) Reset() {
-}
-
-func (dmf dynamicMethodFunc) Signature() map[Domain]ast.ValueType {
-	return dmf.dm.Signature
 }
