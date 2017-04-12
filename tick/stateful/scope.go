@@ -10,12 +10,12 @@ import (
 type DynamicMethod func(self interface{}, args ...interface{}) (interface{}, error)
 
 type DynamicFunc struct {
-	F   func(self interface{}, args ...interface{}) (interface{}, error)
+	F   func(args ...interface{}) (interface{}, error)
 	Sig map[Domain]ast.ValueType
 }
 
 func (df DynamicFunc) Call(args ...interface{}) (interface{}, error) {
-	return df.F(nil, args...)
+	return df.F(args...)
 }
 func (df DynamicFunc) Reset() {
 }

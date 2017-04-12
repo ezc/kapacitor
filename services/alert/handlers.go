@@ -529,7 +529,7 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 
 	if h.usesChanged {
 		h.scope.SetDynamicFunc(changedFunc, &stateful.DynamicFunc{
-			F: func(self interface{}, args ...interface{}) (interface{}, error) {
+			F: func(args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", changedFunc)
 				}
@@ -541,7 +541,7 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 
 	if h.usesLevel {
 		h.scope.SetDynamicFunc(levelFunc, &stateful.DynamicFunc{
-			F: func(self interface{}, args ...interface{}) (interface{}, error) {
+			F: func(args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", levelFunc)
 				}
@@ -553,7 +553,7 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 
 	if h.usesName {
 		h.scope.SetDynamicFunc(nameFunc, &stateful.DynamicFunc{
-			F: func(self interface{}, args ...interface{}) (interface{}, error) {
+			F: func(args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", nameFunc)
 				}
@@ -565,7 +565,7 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 
 	if h.usesTaskName {
 		h.scope.SetDynamicFunc(taskNameFunc, &stateful.DynamicFunc{
-			F: func(self interface{}, args ...interface{}) (interface{}, error) {
+			F: func(args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", taskNameFunc)
 				}
@@ -577,7 +577,7 @@ func (h *matchHandler) match(event alert.Event) (bool, error) {
 
 	if h.usesDuration {
 		h.scope.SetDynamicFunc(durationFunc, &stateful.DynamicFunc{
-			F: func(self interface{}, args ...interface{}) (interface{}, error) {
+			F: func(args ...interface{}) (interface{}, error) {
 				if len(args) != 0 {
 					return nil, fmt.Errorf("%s takes no arguments", durationFunc)
 				}

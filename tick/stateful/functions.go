@@ -19,15 +19,60 @@ const (
 	maxArgs = 4
 )
 
+type ErrWrongFuncSignature struct {
+	Name           string
+	DomainProvided Domain
+	Func           Func
+}
+
+func (e ErrWrongFuncSignature) Error() string {
+	return fmt.Sprintf("Cannot call function \"%s\" with args %s, available signatures are %s.",
+		e.Name, e.DomainProvided, FuncDomains(e.Func))
+}
+
 var ErrNotFloat = errors.New("value is not a float")
 
 type Domain [maxArgs]ast.ValueType
+
+func (d Domain) String() string {
+	input := []string{}
+	for _, el := range d {
+		if el == ast.InvalidType {
+			// Because inputs should be consecutive
+			break
+		}
+		input = append(input, el.String())
+	}
+
+	return "(" + strings.Join(input, ",") + ")"
+}
+
+type Domains []Domain
+
+func (ds Domains) String() string {
+	input := []string{}
+	for _, d := range ds {
+		input = append(input, d.String())
+	}
+
+	return "[" + strings.Join(input, ", ") + "]"
+}
 
 // A callable function from within the expression
 type Func interface {
 	Reset()
 	Call(...interface{}) (interface{}, error)
 	Signature() map[Domain]ast.ValueType
+}
+
+func FuncDomains(f Func) Domains {
+	ds := []Domain{}
+
+	for d := range f.Signature() {
+		ds = append(ds, d)
+	}
+
+	return ds
 }
 
 // Lookup for functions
@@ -38,31 +83,13 @@ var statelessFuncs Funcs
 func init() {
 	statelessFuncs = make(Funcs)
 	// Conversion functions
-	initializeBooleanFuncSignature()
 	statelessFuncs["bool"] = boolean{}
-
-	initializeIntegerFuncSignature()
 	statelessFuncs["int"] = integer{}
-
-	initializeFloatFuncSignature()
 	statelessFuncs["float"] = float{}
-
-	initializeStringFuncSignature()
 	statelessFuncs["string"] = str{}
-
-	initializeDurationFuncSignature()
 	statelessFuncs["duration"] = duration{}
 
-	// Stateful function signatures
-	initializeCountFuncSignature()
-	initializeSigmaFuncSignature()
-	initializeSpreadFuncSignature()
-
 	// Math functions
-	initializeMath1FuncSignature()
-	initializeMath2FuncSignature()
-	initializeMathIFuncSignature()
-	initializeMathIFFuncSignature()
 	statelessFuncs["abs"] = newMath1("abs", math.Abs)
 	statelessFuncs["acos"] = newMath1("acos", math.Acos)
 	statelessFuncs["acosh"] = newMath1("acosh", math.Acosh)
@@ -107,13 +134,6 @@ func init() {
 	statelessFuncs["yn"] = newMathIF("yn", math.Yn)
 
 	// String functions
-	initializeString2BoolFuncSignature()
-	initializeString2IntFuncSignature()
-	initializeString2StringFuncSignature()
-	initializeString1StringFuncSignature()
-	initializeStrLengthFuncSignature()
-	initializeStrReplaceFuncSignature()
-	initializeStrSubstringFuncSignature()
 	statelessFuncs["strContains"] = newString2Bool("strContains", strings.Contains)
 	statelessFuncs["strContainsAny"] = newString2Bool("strContainsAny", strings.ContainsAny)
 	statelessFuncs["strCount"] = newString2Int("strCount", strings.Count)
@@ -136,15 +156,12 @@ func init() {
 	statelessFuncs["strTrimSuffix"] = newString2String("strTrimSuffix", strings.TrimSuffix)
 
 	// Regex functions
-	initializeRegexReplaceFuncSignature()
 	statelessFuncs["regexReplace"] = regexReplace{}
 
 	// Missing functions
-	initializeIsPresentFuncSignature()
 	statelessFuncs["isPresent"] = isPresent{}
 
 	// Time functions
-	initializeTimeFuncSignature()
 	statelessFuncs["minute"] = minute{}
 	statelessFuncs["hour"] = hour{}
 	statelessFuncs["weekday"] = weekday{}
@@ -153,11 +170,9 @@ func init() {
 	statelessFuncs["year"] = year{}
 
 	// Humanize functions
-	initializeHumanBytesFuncSignature()
 	statelessFuncs["humanBytes"] = humanBytes{}
 
 	// Conditionals
-	initializeIfFuncSignature()
 	statelessFuncs["if"] = ifFunc{}
 }
 
@@ -204,7 +219,8 @@ func (m math1) Call(args ...interface{}) (v interface{}, err error) {
 
 var math1FuncSignature = map[Domain]ast.ValueType{}
 
-func initializeMath1FuncSignature() {
+// Initialize Math 1 Func Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TFloat
 	math1FuncSignature[d] = ast.TFloat
@@ -249,7 +265,8 @@ func (m math2) Call(args ...interface{}) (v interface{}, err error) {
 
 var math2FuncSignature = map[Domain]ast.ValueType{}
 
-func initializeMath2FuncSignature() {
+// Initialize Math 2 Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TFloat
 	d[1] = ast.TFloat
@@ -290,7 +307,8 @@ func (m mathI) Call(args ...interface{}) (v interface{}, err error) {
 
 var mathIFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeMathIFuncSignature() {
+// Initialize Math I Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TInt
 	mathIFuncSignature[d] = ast.TFloat
@@ -335,7 +353,8 @@ func (m mathIF) Call(args ...interface{}) (v interface{}, err error) {
 
 var mathIFFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeMathIFFuncSignature() {
+// Initialize Math IF Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TInt
 	d[1] = ast.TFloat
@@ -381,7 +400,8 @@ func (m string2Bool) Call(args ...interface{}) (v interface{}, err error) {
 
 var string2BoolFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeString2BoolFuncSignature() {
+// Initialize String 2 Bool Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	d[1] = ast.TString
@@ -427,7 +447,8 @@ func (m string2Int) Call(args ...interface{}) (v interface{}, err error) {
 
 var string2IntFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeString2IntFuncSignature() {
+// Initialize String 2 Int Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	d[1] = ast.TString
@@ -473,7 +494,8 @@ func (m string2String) Call(args ...interface{}) (v interface{}, err error) {
 
 var string2StringFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeString2StringFuncSignature() {
+// Initialize String 2 String Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	d[1] = ast.TString
@@ -514,7 +536,8 @@ func (m string1String) Call(args ...interface{}) (v interface{}, err error) {
 
 var string1StringFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeString1StringFuncSignature() {
+// Initialize String 1 String Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	string1StringFuncSignature[d] = ast.TString
@@ -544,7 +567,8 @@ func (m strLength) Call(args ...interface{}) (v interface{}, err error) {
 
 var strLengthFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeStrLengthFuncSignature() {
+// Initialize String Length Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	strLengthFuncSignature[d] = ast.TInt
@@ -589,7 +613,8 @@ func (m strReplace) Call(args ...interface{}) (v interface{}, err error) {
 
 var strReplaceFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeStrReplaceFuncSignature() {
+// Initialize String Replace Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	d[1] = ast.TString
@@ -642,7 +667,8 @@ func (m strSubstring) Call(args ...interface{}) (v interface{}, err error) {
 
 var strSubstringFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeStrSubstringFuncSignature() {
+// Initialize String Substring Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TString
 	d[1] = ast.TInt
@@ -684,7 +710,8 @@ func (m regexReplace) Call(args ...interface{}) (v interface{}, err error) {
 
 var regexReplaceFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeRegexReplaceFuncSignature() {
+// Initialize Regex Replace Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TRegex
 	d[1] = ast.TString
@@ -740,7 +767,8 @@ func (boolean) Call(args ...interface{}) (v interface{}, err error) {
 
 var booleanFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeBooleanFuncSignature() {
+// Initialize Boolean Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TBool
 	booleanFuncSignature[d] = ast.TBool
@@ -790,7 +818,8 @@ func (integer) Call(args ...interface{}) (v interface{}, err error) {
 
 var integerFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeIntegerFuncSignature() {
+// Initialize Integer Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TBool
 	integerFuncSignature[d] = ast.TInt
@@ -838,7 +867,8 @@ func (float) Call(args ...interface{}) (v interface{}, err error) {
 
 var floatFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeFloatFuncSignature() {
+// Initialize Float Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TBool
 	floatFuncSignature[d] = ast.TFloat
@@ -884,7 +914,8 @@ func (str) Call(args ...interface{}) (v interface{}, err error) {
 
 var stringFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeStringFuncSignature() {
+// Initialize String Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TBool
 	stringFuncSignature[d] = ast.TString
@@ -947,7 +978,8 @@ func (duration) Call(args ...interface{}) (v interface{}, err error) {
 
 var durationFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeDurationFuncSignature() {
+// Initialize Duration Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TDuration
 	durationFuncSignature[d] = ast.TDuration
@@ -982,7 +1014,8 @@ func (c *count) Call(args ...interface{}) (v interface{}, err error) {
 
 var countFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeCountFuncSignature() {
+// Initialize Count Function Signature
+func init() {
 	d := Domain{}
 	countFuncSignature[d] = ast.TInt
 }
@@ -1028,7 +1061,8 @@ func (s *sigma) Call(args ...interface{}) (interface{}, error) {
 
 var sigmaFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeSigmaFuncSignature() {
+// Initialize Sigma Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TFloat
 	sigmaFuncSignature[d] = ast.TFloat
@@ -1071,7 +1105,8 @@ func (s *spread) Call(args ...interface{}) (interface{}, error) {
 
 var spreadFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeSpreadFuncSignature() {
+// Initialize Spread Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TFloat
 	spreadFuncSignature[d] = ast.TFloat
@@ -1084,7 +1119,8 @@ func (s *spread) Signature() map[Domain]ast.ValueType {
 // Time function signatures
 var timeFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeTimeFuncSignature() {
+// Initialize Time Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TTime
 	timeFuncSignature[d] = ast.TInt
@@ -1258,7 +1294,8 @@ func (humanBytes) Call(args ...interface{}) (v interface{}, err error) {
 
 var humanBytesFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeHumanBytesFuncSignature() {
+// Initialize HumanBytes Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TFloat
 	humanBytesFuncSignature[d] = ast.TString
@@ -1302,7 +1339,8 @@ func (ifFunc) Call(args ...interface{}) (interface{}, error) {
 
 var ifFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeIfFuncSignature() {
+// Initialize If Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TBool
 	types := []ast.ValueType{
@@ -1348,7 +1386,8 @@ func (isPresent) Call(args ...interface{}) (v interface{}, err error) {
 
 var isPresentFuncSignature = map[Domain]ast.ValueType{}
 
-func initializeIsPresentFuncSignature() {
+// Initialize isPresent Function Signature
+func init() {
 	d := Domain{}
 	d[0] = ast.TMissing
 	isPresentFuncSignature[d] = ast.TBool

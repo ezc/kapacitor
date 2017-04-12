@@ -44,7 +44,8 @@ func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionSta
 	signature := f.Signature()
 
 	domain := Domain{}
-	if len(n.argsEvaluators) > len(domain) {
+	if gotLen, expLen := len(n.argsEvaluators), len(domain); gotLen > expLen {
+		return ast.InvalidType, fmt.Errorf("functions do not accept more than %v arguements: received %v", expLen, gotLen)
 	}
 
 	for i, argEvaluator := range n.argsEvaluators {
@@ -57,8 +58,7 @@ func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionSta
 
 	retType, ok := signature[domain]
 	if !ok {
-		// TODO: Better return error?
-		return ast.InvalidType, fmt.Errorf("Wrong function signature")
+		return ast.InvalidType, ErrWrongFuncSignature{Name: n.funcName, DomainProvided: domain, Func: f}
 	}
 
 	return retType, nil
@@ -207,7 +207,7 @@ func (n *EvalFunctionNode) EvalMissing(scope *Scope, executionState ExecutionSta
 // eval - generic evaluation until we have reflection/introspection capabillities so we can know the type of args
 // and return type, we can remove this entirely
 func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interface{}, error) {
-	retType, err := n.Type(scope, executionState)
+	retType, err := n.Type(scope, CreateExecutionState())
 	if err != nil {
 		return nil, err
 	}
