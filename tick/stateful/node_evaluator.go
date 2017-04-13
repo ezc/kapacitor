@@ -39,7 +39,7 @@ type NodeEvaluator interface {
 
 	// TODO: Remove executionState from Type functions type signature
 	// Type returns the type of ast.ValueType
-	Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error)
+	Type(scope ReadOnlyScope) (ast.ValueType, error)
 	// Whether the type returned by the node can change.
 	IsDynamic() bool
 }

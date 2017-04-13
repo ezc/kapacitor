@@ -32,8 +32,8 @@ func NewEvalFunctionNode(funcNode *ast.FunctionNode) (*EvalFunctionNode, error) 
 	return evalFuncNode, nil
 }
 
-func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
-	f := executionState.Funcs[n.funcName]
+func (n *EvalFunctionNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
+	f := GlobalExecutionSate.Funcs[n.funcName]
 	if f == nil {
 		df := scope.DynamicFunc(n.funcName)
 		if df == nil {
@@ -49,7 +49,7 @@ func (n *EvalFunctionNode) Type(scope ReadOnlyScope, executionState ExecutionSta
 	}
 
 	for i, argEvaluator := range n.argsEvaluators {
-		t, err := argEvaluator.Type(scope, executionState)
+		t, err := argEvaluator.Type(scope)
 		if err != nil {
 			return ast.InvalidType, fmt.Errorf("Failed to handle %v argument: %v", i+1, err)
 		}
@@ -207,7 +207,7 @@ func (n *EvalFunctionNode) EvalMissing(scope *Scope, executionState ExecutionSta
 // eval - generic evaluation until we have reflection/introspection capabillities so we can know the type of args
 // and return type, we can remove this entirely
 func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interface{}, error) {
-	retType, err := n.Type(scope, CreateExecutionState())
+	retType, err := n.Type(scope)
 	if err != nil {
 		return nil, err
 	}

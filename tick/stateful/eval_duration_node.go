@@ -11,7 +11,7 @@ type EvalDurationNode struct {
 	Duration time.Duration
 }
 
-func (n *EvalDurationNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
+func (n *EvalDurationNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
 	return ast.TDuration, nil
 }
 

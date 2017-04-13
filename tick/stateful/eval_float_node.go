@@ -11,7 +11,7 @@ type EvalFloatNode struct {
 	Float64 float64
 }
 
-func (n *EvalFloatNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
+func (n *EvalFloatNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
 	return ast.TFloat, nil
 }
 

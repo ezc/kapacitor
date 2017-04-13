@@ -117,15 +117,15 @@ func NewEvalBinaryNode(node *ast.BinaryNode) (*EvalBinaryNode, error) {
 	return b, nil
 }
 
-func (n *EvalBinaryNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
+func (n *EvalBinaryNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
 	if n.constReturnType == ast.InvalidType {
 		var err error
 		// We are dynamic and we need to figure out our type
-		n.leftType, err = n.leftEvaluator.Type(scope, executionState)
+		n.leftType, err = n.leftEvaluator.Type(scope)
 		if err != nil {
 			return ast.InvalidType, err
 		}
-		n.rightType, err = n.rightEvaluator.Type(scope, executionState)
+		n.rightType, err = n.rightEvaluator.Type(scope)
 		if err != nil {
 			return ast.InvalidType, err
 		}
@@ -290,13 +290,12 @@ func (e *EvalBinaryNode) evaluateDynamicNode(scope *Scope, executionState Execut
 	// For example: "count() == 1"
 	//  1. we evaluate the left side and counter is 1 (upper ^ in this function)
 	//  2. we evaluate the second time in "EvalBool"
-	typeExecutionState := CreateExecutionState()
 
-	if leftType, err = left.Type(scope, typeExecutionState); err != nil {
+	if leftType, err = left.Type(scope); err != nil {
 		return emptyResultContainer, &ErrSide{error: err, IsLeft: true}
 	}
 
-	if rightType, err = right.Type(scope, typeExecutionState); err != nil {
+	if rightType, err = right.Type(scope); err != nil {
 		return emptyResultContainer, &ErrSide{error: err, IsRight: true}
 	}
 
@@ -311,7 +310,7 @@ func (e *EvalBinaryNode) evaluateDynamicNode(scope *Scope, executionState Execut
 // Return an understandable error which is most specific to the issue.
 func (e *EvalBinaryNode) determineError(scope *Scope, executionState ExecutionState) error {
 	if scope != nil {
-		leftType, err := e.leftEvaluator.Type(scope, executionState)
+		leftType, err := e.leftEvaluator.Type(scope)
 		if err != nil {
 			return fmt.Errorf("can't get the type of the left node: %s", err)
 		}
@@ -321,7 +320,7 @@ func (e *EvalBinaryNode) determineError(scope *Scope, executionState ExecutionSt
 			return errors.New("left value is invalid value type")
 		}
 
-		rightType, err := e.rightEvaluator.Type(scope, executionState)
+		rightType, err := e.rightEvaluator.Type(scope)
 		if err != nil {
 			return fmt.Errorf("can't get the type of the right node: %s", err)
 		}

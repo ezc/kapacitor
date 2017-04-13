@@ -11,7 +11,7 @@ type EvalBoolNode struct {
 	Node *ast.BoolNode
 }
 
-func (n *EvalBoolNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
+func (n *EvalBoolNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
 	return ast.TBool, nil
 }
 

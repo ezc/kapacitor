@@ -11,7 +11,7 @@ type EvalIntNode struct {
 	Int64 int64
 }
 
-func (n *EvalIntNode) Type(scope ReadOnlyScope, executionState ExecutionState) (ast.ValueType, error) {
+func (n *EvalIntNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
 	return ast.TInt, nil
 }
 

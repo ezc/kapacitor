@@ -80,6 +80,8 @@ type Funcs map[string]Func
 
 var statelessFuncs Funcs
 
+var GlobalExecutionSate ExecutionState
+
 func init() {
 	statelessFuncs = make(Funcs)
 	// Conversion functions
@@ -174,6 +176,9 @@ func init() {
 
 	// Conditionals
 	statelessFuncs["if"] = ifFunc{}
+
+	// Create Global ExecutionState after all functions have been added to statelessFuncs
+	GlobalExecutionSate = CreateExecutionState()
 }
 
 // Return set of built-in Funcs

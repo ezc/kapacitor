@@ -83,7 +83,7 @@ func (se *expression) EvalMissing(scope *Scope) (*ast.Missing, error) {
 }
 
 func (se *expression) Eval(scope *Scope) (interface{}, error) {
-	typ, err := se.nodeEvaluator.Type(scope, CreateExecutionState())
+	typ, err := se.nodeEvaluator.Type(scope)
 	if err != nil {
 		return nil, err
 	}
