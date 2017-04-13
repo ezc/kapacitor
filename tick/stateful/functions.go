@@ -1356,8 +1356,6 @@ func init() {
 		ast.TRegex,
 		ast.TTime,
 		ast.TDuration,
-		ast.TLambda,
-		ast.TList,
 	}
 
 	for _, t := range types {
@@ -1382,11 +1380,9 @@ func (isPresent) Call(args ...interface{}) (v interface{}, err error) {
 	if len(args) != 1 {
 		return false, errors.New("isMissing expects exactly one argument")
 	}
-	if _, isMissing := args[0].(*ast.Missing); !isMissing {
-		return true, nil
-	}
+	_, isMissing := args[0].(*ast.Missing)
 
-	return false, nil
+	return !isMissing, nil
 }
 
 var isPresentFuncSignature = map[Domain]ast.ValueType{}
