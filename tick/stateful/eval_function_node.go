@@ -33,27 +33,23 @@ func NewEvalFunctionNode(funcNode *ast.FunctionNode) (*EvalFunctionNode, error) 
 }
 
 func (n *EvalFunctionNode) Type(scope ReadOnlyScope) (ast.ValueType, error) {
-	f := GlobalExecutionSate.Funcs[n.funcName]
+	f := lookupFunc(n.funcName, builtinFuncs, scope)
 	if f == nil {
-		df := scope.DynamicFunc(n.funcName)
-		if df == nil {
-			return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
-		}
-		f = df
+		return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
 	}
 	signature := f.Signature()
 
 	domain := Domain{}
-	if gotLen, expLen := len(n.argsEvaluators), len(domain); gotLen > expLen {
-		return ast.InvalidType, fmt.Errorf("functions do not accept more than %v arguements: received %v", expLen, gotLen)
-	}
-
 	for i, argEvaluator := range n.argsEvaluators {
 		t, err := argEvaluator.Type(scope)
 		if err != nil {
 			return ast.InvalidType, fmt.Errorf("Failed to handle %v argument: %v", i+1, err)
 		}
 		domain[i] = t
+	}
+
+	if gotLen, expLen := len(n.argsEvaluators), len(domain); gotLen > expLen {
+		return ast.InvalidType, ErrWrongFuncSignature{Name: n.funcName, DomainProvided: domain, Func: f}
 	}
 
 	retType, ok := signature[domain]
@@ -80,17 +76,9 @@ func (n *EvalFunctionNode) callFunction(scope *Scope, executionState ExecutionSt
 		args = append(args, value)
 	}
 
-	f := executionState.Funcs[n.funcName]
-
-	// Look for function on scope
+	f := lookupFunc(n.funcName, executionState.Funcs, scope)
 	if f == nil {
-		if df := scope.DynamicFunc(n.funcName); df != nil {
-			f = df
-		}
-	}
-
-	if f == nil {
-		return nil, fmt.Errorf("undefined function: %q", n.funcName)
+		return ast.InvalidType, fmt.Errorf("undefined function: %q", n.funcName)
 	}
 
 	ret, err := f.Call(args...)
@@ -237,4 +225,22 @@ func eval(n NodeEvaluator, scope *Scope, executionState ExecutionState) (interfa
 		return nil, fmt.Errorf("function arg expression returned unexpected type %s", retType)
 	}
 
+}
+
+func lookupFunc(name string, funcs Funcs, scope ReadOnlyScope) Func {
+	f := funcs[name]
+	if f != nil {
+		return f
+	}
+
+	df := scope.DynamicFunc(name)
+	if df != nil {
+		return df
+	}
+
+	// Return nil here explicitly so its a nil Func not nil *DynamicFunc
+	// returning scope.DynamicFunc(name) caused nil check in callFunction
+	// f == nil to evaluate to false even though f was nil. This was weird
+	// enough that I felt it warranted a comment.
+	return nil
 }

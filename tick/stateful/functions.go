@@ -15,6 +15,10 @@ import (
 	"github.com/influxdata/kapacitor/tick/ast"
 )
 
+// maxArgs is used to specify the largest number of arguments that a
+// builtin function can accept.
+// Increment this value if you create a builtin function with more than
+// the current value of maxArgs.
 const (
 	maxArgs = 4
 )
@@ -80,7 +84,7 @@ type Funcs map[string]Func
 
 var statelessFuncs Funcs
 
-var GlobalExecutionSate ExecutionState
+var builtinFuncs Funcs
 
 func init() {
 	statelessFuncs = make(Funcs)
@@ -177,8 +181,8 @@ func init() {
 	// Conditionals
 	statelessFuncs["if"] = ifFunc{}
 
-	// Create Global ExecutionState after all functions have been added to statelessFuncs
-	GlobalExecutionSate = CreateExecutionState()
+	// Create map of builtin functions after all functions have been added to statelessFuncs
+	builtinFuncs = NewFunctions()
 }
 
 // Return set of built-in Funcs

@@ -320,6 +320,10 @@ func (e *EvalBinaryNode) determineError(scope *Scope, executionState ExecutionSt
 			return errors.New("left value is invalid value type")
 		}
 
+		if leftType == ast.TMissing {
+			return errors.New("left value is missing value")
+		}
+
 		rightType, err := e.rightEvaluator.Type(scope)
 		if err != nil {
 			return fmt.Errorf("can't get the type of the right node: %s", err)
@@ -328,6 +332,10 @@ func (e *EvalBinaryNode) determineError(scope *Scope, executionState ExecutionSt
 
 		if rightType == ast.InvalidType {
 			return errors.New("right value is invalid value type")
+		}
+
+		if rightType == ast.TMissing {
+			return errors.New("right value is missing value")
 		}
 	}
 
